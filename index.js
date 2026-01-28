@@ -174,11 +174,11 @@ async function generateReform() {
     // Brutalne czyszczenie JSON - naprawia problemy z escapowaniem
     jsonText = jsonText
       .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Usuń znaki kontrolne
-      .replace(/\r\n/g, ' ')  // CRLF -> spacja
-      .replace(/\r/g, ' ')    // CR -> spacja
-      .replace(/\n/g, ' ')    // LF -> spacja
-      .replace(/\t/g, ' ')    // TAB -> spacja
-      .replace(/  +/g, ' ');  // Wiele spacji -> jedna
+      .replace(/\r\n/g, ' ') // CRLF -> spacja
+      .replace(/\r/g, ' ') // CR -> spacja
+      .replace(/\n/g, ' ') // LF -> spacja
+      .replace(/\t/g, ' ') // TAB -> spacja
+      .replace(/  +/g, ' '); // Wiele spacji -> jedna
 
     // Parsuj z lepszą obsługą błędów
     let reform;
@@ -187,7 +187,10 @@ async function generateReform() {
     } catch (parseError) {
       console.error('❌ Błąd parsowania JSON:', parseError.message);
       const errorPos = parseInt(parseError.message.match(/\d+/)?.[0] || '0');
-      console.error('🔍 Fragment:', jsonText.substring(Math.max(0, errorPos - 50), errorPos + 50));
+      console.error(
+        '🔍 Fragment:',
+        jsonText.substring(Math.max(0, errorPos - 50), errorPos + 50),
+      );
       throw parseError;
     }
 
