@@ -106,7 +106,15 @@ const CATEGORIES = [
 ];
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' });
+const model = genAI.getGenerativeModel({
+  model: 'gemma-3-27b-it',
+  generationConfig: {
+    temperature: 1.2, // Zwiększa losowość (0.0-2.0)
+    topP: 0.95, // Nucleus sampling
+    topK: 64, // Top-k sampling
+    maxOutputTokens: 8192,
+  },
+});
 
 const categoriesList = CATEGORIES.map(
   (c) => `- ${c.name}: ${c.description}`,
