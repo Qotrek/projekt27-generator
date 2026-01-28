@@ -164,15 +164,24 @@ async function generateReform() {
       `📏 Długości: title=${reform.title?.length}, summary=${reform.summary?.length}, content=${reform.content?.length}`,
     );
 
-    const category = CATEGORIES.find((c) => c.name === reform.category);
-    if (!category) {
+    if (!reform.category || typeof reform.category !== 'string') {
       console.warn(
-        `⚠️  Nieznana kategoria: "${reform.category}", używam domyślnej`,
+        `⚠️  Brak lub niepoprawna kategoria: "${reform.category}", używam domyślnej`,
       );
       reform.category_id = CATEGORIES[0].id;
+      console.log(`📂 Kategoria: ${CATEGORIES[0].name} (domyślna)`);
     } else {
-      reform.category_id = category.id;
-      console.log(`📂 Kategoria: ${category.name}`);
+      const category = CATEGORIES.find((c) => c.name === reform.category);
+      if (!category) {
+        console.warn(
+          `⚠️  Nieznana kategoria: "${reform.category}", używam domyślnej`,
+        );
+        reform.category_id = CATEGORIES[0].id;
+        console.log(`📂 Kategoria: ${CATEGORIES[0].name} (domyślna)`);
+      } else {
+        reform.category_id = category.id;
+        console.log(`📂 Kategoria: ${category.name}`);
+      }
     }
 
     console.log('✅ Wygenerowano reformę:', reform.title);
