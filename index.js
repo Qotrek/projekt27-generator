@@ -107,11 +107,11 @@ const CATEGORIES = [
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
-  model: 'gemma-3-27b-it',
+  model: 'gemini-2.5-flash',
   generationConfig: {
-    temperature: 1.8, // Maksymalna losowość (0.0-2.0)
-    topP: 0.95, // Nucleus sampling
-    topK: 40, // Mniej restrykcyjny top-k
+    temperature: 1.5,
+    topP: 0.95,
+    topK: 40,
     maxOutputTokens: 8192,
   },
 });
