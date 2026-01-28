@@ -112,15 +112,16 @@ const categoriesList = CATEGORIES.map(
   (c) => `- ${c.name}: ${c.description}`,
 ).join('\n');
 
-const PROMPT = `Wygeneruj kontrowersyjną, skrajnie prawicową i dziwną reformę prawa w Polsce.
-Może być bazowana na obecnych trendach politycznych i społecznych w Polsce.
+const PROMPT = `Wygeneruj propozycję reformy prawa w Polsce, która jest innowacyjna i odważna, ale jednocześnie realistyczna do wdrożenia.
+Reforma powinna odnosić się do rzeczywistych problemów Polski, być kontrowersyjna na tyle by wzbudzała dyskusję, ale nie na tyle by była kompletnie nierealna.
+Inspiruj się obecnymi trendami politycznymi i społecznymi, ale utrzymuj propozycje w granicach rozsądku.
 
 DOSTĘPNE KATEGORIE:
 ${categoriesList}
 
 Wygeneruj w formacie JSON z polami:
-- title: chwytliwy tytuł reformy - MAKSYMALNIE 100 znaków, najlepiej 60-90
-- summary: zwięzłe podsumowanie - TUTAJ NIE MOŻESZ UŻYWAĆ MARKDOWNA - MAKSYMALNIE 300 znaków, najlepiej 200-280
+- title: chwytliwy, ale profesjonalny tytuł reformy - MAKSYMALNIE 100 znaków, najlepiej 60-90
+- summary: zwięzłe, merytoryczne podsumowanie - TUTAJ NIE MOŻESZ UŻYWAĆ MARKDOWNA - MAKSYMALNIE 300 znaków, najlepiej 200-280
 - content: szczegółowy opis reformy w formacie MARKDOWN - MAKSYMALNIE 7000 znaków. Użyj nagłówków (##, ###), list (-, *), pogrubienia (**tekst**). Podziel na sekcje: Uzasadnienie, Cele, Wdrożenie, Skutki społeczne, Skutki ekonomiczne.
 - category: nazwa kategorii z listy powyżej (DOKŁADNIE jak podano, np. "Finanse publiczne", "Imigracja")
 
@@ -130,7 +131,7 @@ Wygeneruj w formacie JSON z polami:
 - content: MAKSYMALNIE 7000 znaków (NIE WIĘCEJ!)
 
 Jeśli przekroczysz limity, request się nie powiedzie!
-Bądź kreatywny i kontrowersyjny ale TRZYMAJ SIĘ LIMITÓW!
+Bądź innowacyjny i kontrowersyjny, ale zachowaj realizm i merytorykę. TRZYMAJ SIĘ LIMITÓW!
 Odpowiedz TYLKO w formacie JSON, bez żadnych dodatkowych komentarzy.`;
 
 async function generateReform() {
