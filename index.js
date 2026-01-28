@@ -106,7 +106,7 @@ const CATEGORIES = [
 ];
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+const model = genAI.getGenerativeModel({ model: 'gemma-3-27b' });
 
 const categoriesList = CATEGORIES.map(
   (c) => `- ${c.name}: ${c.description}`,
