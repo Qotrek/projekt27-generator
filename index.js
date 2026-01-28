@@ -7,7 +7,8 @@ dotenv.config();
 const DEV_MODE = false;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const PROJECT27_TOKEN = process.env.PROJECT27_TOKEN;
+let PROJECT27_TOKEN = null;
+const PROJECT27_REFRESH_TOKEN = process.env.PROJECT27_REFRESH_TOKEN;
 const MIN_INTERVAL = parseInt(process.env.MIN_INTERVAL_MINUTES) || 5;
 const MAX_INTERVAL = parseInt(process.env.MAX_INTERVAL_MINUTES) || 10;
 const API_ENDPOINT = 'https://projekt27.pl/api/ideas';
@@ -172,7 +173,6 @@ async function generateReform() {
       jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
     }
 
-    // Parsuj bez żadnych modyfikacji - model powinien generować prawidłowy JSON
     let reform;
     try {
       reform = JSON.parse(jsonText);
@@ -220,6 +220,27 @@ async function generateReform() {
   }
 }
 
+async function refreshAccessToken() {
+  try {
+    console.log('🔄 Pobieranie nowego access token...');
+
+    const response = await axios.post('https://projekt27.pl/api/auth/refresh', {
+      refresh_token: PROJECT27_REFRESH_TOKEN,
+    });
+
+    PROJECT27_TOKEN = response.data.access_token;
+
+    console.log('✅ Access token pobrany pomyślnie');
+    return PROJECT27_TOKEN;
+  } catch (error) {
+    console.error(
+      '❌ Błąd pobierania tokena:',
+      error.response?.data || error.message,
+    );
+    throw error;
+  }
+}
+
 async function postReform(reform) {
   try {
     const body = {
@@ -247,10 +268,28 @@ async function postReform(reform) {
 
     console.log('📤 Wysyłam reformę na projekt27.pl...');
 
-    const response = await axios.post(API_ENDPOINT, body, { headers });
+    try {
+      const response = await axios.post(API_ENDPOINT, body, { headers });
+      console.log('✅ Pomyślnie wysłano reformę! Status:', response.status);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        console.warn('⚠️  Token wygasł (401), odnawiamy i ponawiamy...');
+        await refreshAccessToken();
 
-    console.log('✅ Pomyślnie wysłano reformę! Status:', response.status);
-    return response.data;
+        const headersWithNewToken = {
+          Authorization: `Bearer ${PROJECT27_TOKEN}`,
+          'Content-Type': 'application/json',
+        };
+
+        const response = await axios.post(API_ENDPOINT, body, {
+          headers: headersWithNewToken,
+        });
+        console.log('✅ Pomyślnie wysłano reformę! Status:', response.status);
+        return response.data;
+      }
+      throw error;
+    }
   } catch (error) {
     console.error(
       '❌ Błąd podczas wysyłania reformy:',
@@ -292,6 +331,8 @@ function scheduleNext() {
 
 console.log('🚀 Uruchamiam generator reform prawnych...');
 console.log(`⚙️  Interwał: ${MIN_INTERVAL}-${MAX_INTERVAL} minut\n`);
+
+await refreshAccessToken();
 
 runCycle().then(() => {
   scheduleNext();

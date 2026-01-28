@@ -10,6 +10,7 @@ Automatyczny generator kontrowersyjnych reform prawnych w Polsce wykorzystujący
 - ⏰ **Harmonogram** - losowy interwał 5-10 minut między publikacjami
 - 🧪 **Tryb developerski** - testowanie bez wysyłania requestów
 - 🔄 **Ciągła praca** - działa w tle, automatycznie publikuje
+- 🔐 **Bezpieczna autentykacja** - tokeny z dynamicznym odnawianiem dostępu
 
 ## 📋 Wymagania
 
@@ -40,24 +41,60 @@ Automatyczny generator kontrowersyjnych reform prawnych w Polsce wykorzystujący
 
 4. **Edytuj plik `.env`:**
    - `GEMINI_API_KEY` - Twój klucz API z [Google AI Studio](https://aistudio.google.com/apikey)
-   - `PROJECT27_TOKEN` - Token z projekt27.pl (jak go zdobyć - patrz niżej)
+   - `PROJECT27_REFRESH_TOKEN` - Refresh token z projekt27.pl (wymagany!)
    - `MIN_INTERVAL_MINUTES` / `MAX_INTERVAL_MINUTES` - odstęp czasu (domyślnie 5-10 min)
+
+   > ℹ️ **Ważne:** Access token jest **pobierany automatycznie** na start aplikacji - nie musisz go wklejać w `.env`!
 
 5. **Uruchom aplikację:**
    ```bash
    npm start
    ```
+   Tokeny - Jak to działa
 
-## 🔑 Jak zdobyć token z projekt27.pl
+### 📋 Refresh Token (Przechowujesz w `.env`)
+
+- **Czas życia:** długi (tygodnie/miesiące)
+- **Cel:** "hasło" do uzyskiwania nowych access tokenów
+- **Gdzie:** Wklej wartość `refresh_token` z logowania do `.env`
+- **Ryzyko:** Jeśli wycieknie, zmień hasło na projekt27.pl
+- **Zmiana:** Praktycznie nigdy się nie zmienia
+
+### 🎫 Access Token (Pobierany dynamicznie)
+
+- **Czas życia:** krótki (kilka godzin)
+- **Cel:** Uwierzytelnianie requestów API
+- **Pobieranie:** Automatycznie na start aplikacji (`npm start`)
+- **Odnawianie:** Gdy wygaśnie (błąd 401) - app sam pobiera nowy
+- **Zmiana:** Zmienia się co kilka godzin automatycznie
+
+### 🔄 Jak pobrać tokeny z projekt27.pl
 
 1. Zaloguj się na [projekt27.pl](https://projekt27.pl)
 2. Otwórz DevTools (F12)
 3. Przejdź do zakładki **Network**
-4. Odśwież stronę lub wykonaj akcję (np. wejdź w swoje pomysły)
-5. Znajdź request do API (np. `/api/users/me`)
-6. W zakładce **Headers** → znajdź `Authorization: Bearer ...`
-7. Skopiuj token (długi ciąg znaków po "Bearer ")
-8. Wklej do `.env` w `PROJECT27_TOKEN`
+4. Odśwież stronę lub zaloguj się
+5. Znajdź request logowania (`/api/auth/login` lub POST)
+6. W Response tab będą tokeny:
+   ```json
+   {
+     "access_token": "eyJhbGciOi...",
+     "refresh_token": "eyJhbGciOi...",
+     "token_type": "bearer"
+   }
+   ```
+7. **Wklej TYLKO refresh token** do `.env`:
+   ```env
+   PROJECT27_REFRESH_TOKEN=eyJhbGciOi...
+   ```
+
+### 🔐 Automatyczne odnawianie dostępu
+
+- Na **start** aplikacji → pobiera świeży access token
+- Jeśli access token **wygaśnie** → automatycznie odnawiany
+- Refresh token nigdy się nie wysyła w requestach API (tylko do odnawiania)
+- **Brak działań** - wszystko działa automagicznie! ✨
+  Aplikacja **automatycznie odnawiania** access token gdy wygaśnie (błąd 401). Refresh token jest przechowywany w `.env` i używany do uzyskiwania nowego dostępu bez konieczności ponownego logowania.
 
 ## ⚙️ Konfiguracja
 
@@ -137,8 +174,10 @@ projekt27-generator/
 
 ### Błąd 401: "Nie udało się zweryfikować danych uwierzytelniających"
 
-- Token wygasł (sprawdź pole `exp` w JWT - to timestamp)
-- Zdobądź nowy token z projekt27.pl (instrukcja powyżej)
+- **Normalnie** - aplikacja sama pobiera nowy token (powinno działać automagicznie)
+- Jeśli problem się powtarza: **refresh token wygasł lub jest niepoprawny**
+- **Rozwiązanie:** Pobierz nowe tokeny (instrukcja w sekcji "🔑 Tokeny")
+- Możesz dekodować JWT na [jwt.io](https://jwt.io) aby sprawdzić wygaśnięcie
 
 ### Program się zatrzymuje
 
