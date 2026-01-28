@@ -1,0 +1,35 @@
+{
+  "name": "projekt27-generator",
+  "version": "1.0.0",
+  "description": "Automatyczny generator kontrowersyjnych reform prawnych wykorzystujący Google Gemini AI i integrację z projekt27.pl",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "list-models": "node list-models.js"
+  },
+  "keywords": [
+    "gemini",
+    "ai",
+    "generator",
+    "projekt27",
+    "automation",
+    "content-generator"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/projekt27-generator"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/projekt27-generator/issues"
+  },
+  "homepage": "https://github.com/your-username/projekt27-generator#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.5",
+    "axios": "^1.7.9"
+  }
+}
