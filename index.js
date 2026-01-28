@@ -167,15 +167,18 @@ async function generateReform() {
 
     // Prawidłowe escapowanie dla wieloliniowego JSON
     // Najpierw usuń znaki kontrolne poza \n, \r, \t
-    jsonText = jsonText.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+    jsonText = jsonText.replace(
+      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
+      '',
+    );
 
     // Escapujemy backslashe i cudzysłowy, potem nowe linie
     jsonText = jsonText
-      .replace(/\\/g, '\\\\')    // \ -> \\
-      .replace(/\r\n/g, '\\n')   // CRLF -> \n
-      .replace(/\n/g, '\\n')     // LF -> \n
-      .replace(/\r/g, '\\n')     // CR -> \n
-      .replace(/\t/g, '\\t')     // TAB -> \t
+      .replace(/\\/g, '\\\\') // \ -> \\
+      .replace(/\r\n/g, '\\n') // CRLF -> \n
+      .replace(/\n/g, '\\n') // LF -> \n
+      .replace(/\r/g, '\\n') // CR -> \n
+      .replace(/\t/g, '\\t') // TAB -> \t
       .replace(/([^\\])"/g, (match, p1) => {
         // Escapuj tylko niezescapowane cudzysłowy wewnątrz wartości
         return p1 + '\\"';
@@ -194,10 +197,6 @@ async function generateReform() {
       );
       console.log('\n📄 Pełny JSON do debugowania:');
       console.log(jsonText);
-      throw parseError;
-    }
-        jsonText.substring(Math.max(0, errorPos - 50), errorPos + 50),
-      );
       throw parseError;
     }
 
