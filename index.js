@@ -133,6 +133,12 @@ Wygeneruj w formacie JSON z polami:
 - content: szczegółowy opis reformy w formacie MARKDOWN - MAKSYMALNIE 7000 znaków. Użyj nagłówków (##, ###), list (-, *), pogrubienia (**tekst**). Podziel na sekcje: Uzasadnienie, Cele, Wdrożenie, Skutki społeczne, Skutki ekonomiczne.
 - category: nazwa kategorii z listy powyżej (DOKŁADNIE jak podano, np. "Finanse publiczne", "Imigracja")
 
+!!!KRYTYCZNE - ZASADY JSON!!!
+- W treści content ZAMIENIAJ wszystkie znaki nowej linii na SPACJE
+- NIE używaj znaków \\n, \\r, \\t w treści
+- Pisz całą treść jako jeden ciągły tekst z markdown w jednej linii
+- Sekcje oddzielaj podwójnymi spacjami i znacznikami ##
+
 !!!ABSOLUTNIE KRYTYCZNE - NIE PRZEKRACZAJ TYCH LIMITÓW!!!:
 - title: MAKSYMALNIE 100 znaków (NIE WIĘCEJ!)
 - summary: MAKSYMALNIE 300 znaków (NIE WIĘCEJ!)
@@ -165,13 +171,25 @@ async function generateReform() {
       jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
     }
 
+    // Brutalne czyszczenie JSON - naprawia problemy z escapowaniem
     jsonText = jsonText
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
-      .replace(/\r\n/g, '\\n')
-      .replace(/\n/g, '\\n')
-      .replace(/\t/g, '\\t');
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Usuń znaki kontrolne
+      .replace(/\r\n/g, ' ')  // CRLF -> spacja
+      .replace(/\r/g, ' ')    // CR -> spacja
+      .replace(/\n/g, ' ')    // LF -> spacja
+      .replace(/\t/g, ' ')    // TAB -> spacja
+      .replace(/  +/g, ' ');  // Wiele spacji -> jedna
 
-    const reform = JSON.parse(jsonText);
+    // Parsuj z lepszą obsługą błędów
+    let reform;
+    try {
+      reform = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error('❌ Błąd parsowania JSON:', parseError.message);
+      const errorPos = parseInt(parseError.message.match(/\d+/)?.[0] || '0');
+      console.error('🔍 Fragment:', jsonText.substring(Math.max(0, errorPos - 50), errorPos + 50));
+      throw parseError;
+    }
 
     console.log(
       `📏 Długości: title=${reform.title?.length}, summary=${reform.summary?.length}, content=${reform.content?.length}`,
