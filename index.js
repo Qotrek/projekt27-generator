@@ -109,9 +109,9 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
   model: 'gemma-3-27b-it',
   generationConfig: {
-    temperature: 1.2, // Zwiększa losowość (0.0-2.0)
+    temperature: 1.8, // Maksymalna losowość (0.0-2.0)
     topP: 0.95, // Nucleus sampling
-    topK: 64, // Top-k sampling
+    topK: 40, // Mniej restrykcyjny top-k
     maxOutputTokens: 8192,
   },
 });
@@ -146,7 +146,11 @@ async function generateReform() {
   try {
     console.log('🤖 Generuję nową reformę prawną...');
 
-    const result = await model.generateContent(PROMPT);
+    const randomSeed = Math.random().toString(36).substring(7);
+    const timestamp = new Date().toISOString();
+    const uniquePrompt = `${PROMPT}\n\n[Generacja ID: ${randomSeed} | Czas: ${timestamp}]`;
+
+    const result = await model.generateContent(uniquePrompt);
     const response = result.response;
     const text = response.text();
 
