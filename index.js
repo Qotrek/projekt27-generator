@@ -268,12 +268,3 @@ console.log(`⚙️  Interwał: ${MIN_INTERVAL}-${MAX_INTERVAL} minut\n`);
 runCycle().then(() => {
   scheduleNext();
 });
-
-// Start aplikacji
-console.log('🚀 Uruchamiam generator reform prawnych...');
-console.log(`⚙️  Interwał: ${MIN_INTERVAL}-${MAX_INTERVAL} minut\n`);
-
-// Pierwsze uruchomienie od razu
-runCycle().then(() => {
-  scheduleNext();
-});
