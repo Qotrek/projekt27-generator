@@ -112,7 +112,7 @@ const model = genAI.getGenerativeModel({
     temperature: 1.5,
     topP: 0.95,
     topK: 40,
-    maxOutputTokens: 8192,
+    maxOutputTokens: 16384,
   },
 });
 
@@ -128,15 +128,22 @@ DOSTĘPNE KATEGORIE:
 ${categoriesList}
 
 Wygeneruj w formacie JSON z polami:
-- title: chwytliwy, ale profesjonalny tytuł reformy - MAKSYMALNIE 100 znaków, najlepiej 60-90
-- summary: zwięzłe, merytoryczne podsumowanie - TUTAJ NIE MOŻESZ UŻYWAĆ MARKDOWNA - MAKSYMALNIE 300 znaków, najlepiej 200-280
-- content: szczegółowy opis reformy w formacie MARKDOWN - MAKSYMALNIE 7000 znaków. Użyj nagłówków (##, ###), list (-, *), pogrubienia (**tekst**). Podziel na sekcje: Uzasadnienie, Cele, Wdrożenie, Skutki społeczne, Skutki ekonomiczne.
+- title: chwytliwy, ale profesjonalny tytuł reformy - MAKSYMALNIE 100 znaków
+- summary: zwięzłe, merytoryczne podsumowanie - TUTAJ NIE MOŻESZ UŻYWAĆ MARKDOWNA - MAKSYMALNIE 300 znaków
+- content: szczegółowy opis reformy w formacie MARKDOWN - MAKSYMALNIE 4500 znaków. Użyj nagłówków (##, ###), list (-, *), pogrubienia (**tekst**). Podziel na sekcje: Uzasadnienie, Cele, Wdrożenie, Skutki społeczne, Skutki ekonomiczne. BĄDŹ ZWIĘZŁY!
 - category: nazwa kategorii z listy powyżej (DOKŁADNIE jak podano, np. "Finanse publiczne", "Imigracja")
 
-!!!ABSOLUTNIE KRYTYCZNE - NIE PRZEKRACZAJ TYCH LIMITÓW!!!:
-- title: MAKSYMALNIE 100 znaków (NIE WIĘCEJ!)
-- summary: MAKSYMALNIE 300 znaków (NIE WIĘCEJ!)
-- content: MAKSYMALNIE 7000 znaków (NIE WIĘCEJ!)
+!!!KRYTYCZNE - ZASADY JSON!!!
+- Generuj PRAWIDŁOWY, KOMPLETNY JSON - używaj \\n dla nowych linii w treści content
+- Wszystkie znaki specjalne w stringach muszą być POPRAWNIE escapowane (\\n, \\t, \\", \\\\)
+- Nie używaj ŻADNYCH znaków kontrolnych w treści
+- JSON musi być parsewalny przez JSON.parse()
+- ZAKOŃCZ WSZYSTKIE STRINGI znakiem " i ZAMKNIJ obiekt JSON za pomocą }
+
+!!!ABSOLUTNIE KRYTYCZNE - NIE PRZEKRACZAJ TYCH LIMITÓW!!!
+- title: MAKSYMALNIE 100 znaków
+- summary: MAKSYMALNIE 300 znaków
+- content: MAKSYMALNIE 4500 znaków - BĄDŹ ZWIĘZŁY ALE MERYTORYCZNY!
 
 Jeśli przekroczysz limity, request się nie powiedzie!
 Bądź innowacyjny i kontrowersyjny, ale zachowaj realizm i merytorykę. TRZYMAJ SIĘ LIMITÓW!
@@ -165,26 +172,7 @@ async function generateReform() {
       jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
     }
 
-    // Prawidłowe escapowanie dla wieloliniowego JSON
-    // Najpierw usuń znaki kontrolne poza \n, \r, \t
-    jsonText = jsonText.replace(
-      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-      '',
-    );
-
-    // Escapujemy backslashe i cudzysłowy, potem nowe linie
-    jsonText = jsonText
-      .replace(/\\/g, '\\\\') // \ -> \\
-      .replace(/\r\n/g, '\\n') // CRLF -> \n
-      .replace(/\n/g, '\\n') // LF -> \n
-      .replace(/\r/g, '\\n') // CR -> \n
-      .replace(/\t/g, '\\t') // TAB -> \t
-      .replace(/([^\\])"/g, (match, p1) => {
-        // Escapuj tylko niezescapowane cudzysłowy wewnątrz wartości
-        return p1 + '\\"';
-      });
-
-    // Parsuj z lepszą obsługą błędów
+    // Parsuj bez żadnych modyfikacji - model powinien generować prawidłowy JSON
     let reform;
     try {
       reform = JSON.parse(jsonText);
