@@ -133,12 +133,6 @@ Wygeneruj w formacie JSON z polami:
 - content: szczegółowy opis reformy w formacie MARKDOWN - MAKSYMALNIE 7000 znaków. Użyj nagłówków (##, ###), list (-, *), pogrubienia (**tekst**). Podziel na sekcje: Uzasadnienie, Cele, Wdrożenie, Skutki społeczne, Skutki ekonomiczne.
 - category: nazwa kategorii z listy powyżej (DOKŁADNIE jak podano, np. "Finanse publiczne", "Imigracja")
 
-!!!KRYTYCZNE - ZASADY JSON!!!
-- W treści content ZAMIENIAJ wszystkie znaki nowej linii na SPACJE
-- NIE używaj znaków \\n, \\r, \\t w treści
-- Pisz całą treść jako jeden ciągły tekst z markdown w jednej linii
-- Sekcje oddzielaj podwójnymi spacjami i znacznikami ##
-
 !!!ABSOLUTNIE KRYTYCZNE - NIE PRZEKRACZAJ TYCH LIMITÓW!!!:
 - title: MAKSYMALNIE 100 znaków (NIE WIĘCEJ!)
 - summary: MAKSYMALNIE 300 znaków (NIE WIĘCEJ!)
@@ -171,14 +165,21 @@ async function generateReform() {
       jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
     }
 
-    // Brutalne czyszczenie JSON - naprawia problemy z escapowaniem
+    // Prawidłowe escapowanie dla wieloliniowego JSON
+    // Najpierw usuń znaki kontrolne poza \n, \r, \t
+    jsonText = jsonText.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+
+    // Escapujemy backslashe i cudzysłowy, potem nowe linie
     jsonText = jsonText
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Usuń znaki kontrolne
-      .replace(/\r\n/g, ' ') // CRLF -> spacja
-      .replace(/\r/g, ' ') // CR -> spacja
-      .replace(/\n/g, ' ') // LF -> spacja
-      .replace(/\t/g, ' ') // TAB -> spacja
-      .replace(/  +/g, ' '); // Wiele spacji -> jedna
+      .replace(/\\/g, '\\\\')    // \ -> \\
+      .replace(/\r\n/g, '\\n')   // CRLF -> \n
+      .replace(/\n/g, '\\n')     // LF -> \n
+      .replace(/\r/g, '\\n')     // CR -> \n
+      .replace(/\t/g, '\\t')     // TAB -> \t
+      .replace(/([^\\])"/g, (match, p1) => {
+        // Escapuj tylko niezescapowane cudzysłowy wewnątrz wartości
+        return p1 + '\\"';
+      });
 
     // Parsuj z lepszą obsługą błędów
     let reform;
@@ -189,6 +190,12 @@ async function generateReform() {
       const errorPos = parseInt(parseError.message.match(/\d+/)?.[0] || '0');
       console.error(
         '🔍 Fragment:',
+        jsonText.substring(Math.max(0, errorPos - 100), errorPos + 100),
+      );
+      console.log('\n📄 Pełny JSON do debugowania:');
+      console.log(jsonText);
+      throw parseError;
+    }
         jsonText.substring(Math.max(0, errorPos - 50), errorPos + 50),
       );
       throw parseError;
