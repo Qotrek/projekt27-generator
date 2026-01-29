@@ -193,25 +193,20 @@ async function generateReform() {
     );
 
     if (!reform.category || typeof reform.category !== 'string') {
-      console.warn(
-        `⚠️  Brak lub niepoprawna kategoria: "${reform.category}", używam domyślnej`,
+      throw new Error(
+        `Brak lub niepoprawna kategoria: "${reform.category}" - wymagane ponowne generowanie`,
       );
-      reform.category_id = CATEGORIES[0].id;
-      console.log(`📂 Kategoria: ${CATEGORIES[0].name} (domyślna)`);
-    } else {
-      const category = CATEGORIES.find((c) => c.name === reform.category);
-      if (!category) {
-        console.warn(
-          `⚠️  Nieznana kategoria: "${reform.category}", używam domyślnej`,
-        );
-        reform.category_id = CATEGORIES[0].id;
-        console.log(`📂 Kategoria: ${CATEGORIES[0].name} (domyślna)`);
-      } else {
-        reform.category_id = category.id;
-        console.log(`📂 Kategoria: ${category.name}`);
-      }
     }
 
+    const category = CATEGORIES.find((c) => c.name === reform.category);
+    if (!category) {
+      throw new Error(
+        `Nieznana kategoria: "${reform.category}" - wymagane ponowne generowanie`,
+      );
+    }
+
+    reform.category_id = category.id;
+    console.log(`📂 Kategoria: ${category.name}`);
     console.log('✅ Wygenerowano reformę:', reform.title);
     return reform;
   } catch (error) {
@@ -284,12 +279,35 @@ async function postReform(reform) {
 }
 
 async function runCycle() {
-  try {
-    const reform = await generateReform();
-    await postReform(reform);
-    console.log('🎉 Cykl zakończony sukcesem!\n');
-  } catch (error) {
-    console.error('💥 Cykl zakończony błędem:', error.message, '\n');
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+
+  while (attempt < MAX_RETRIES) {
+    try {
+      attempt++;
+      if (attempt > 1) {
+        console.log(`🔄 Próba ${attempt}/${MAX_RETRIES}...`);
+      }
+
+      const reform = await generateReform();
+      await postReform(reform);
+      console.log('🎉 Cykl zakończony sukcesem!\n');
+      return;
+    } catch (error) {
+      if (error.message.includes('wymagane ponowne generowanie')) {
+        console.warn(
+          `⚠️  ${error.message} - ponawiam próbę (${attempt}/${MAX_RETRIES})...\n`,
+        );
+        if (attempt >= MAX_RETRIES) {
+          console.error(
+            `💥 Przekroczono limit prób (${MAX_RETRIES}). Cykl zakończony błędem.\n`,
+          );
+        }
+      } else {
+        console.error('💥 Cykl zakończony błędem:', error.message, '\n');
+        return;
+      }
+    }
   }
 }
 
