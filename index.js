@@ -110,7 +110,7 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.5-flash',
   generationConfig: {
-    temperature: 1.5,
+    temperature: 1.0,
     topP: 0.95,
     topK: 40,
     maxOutputTokens: 16384,
@@ -155,77 +155,71 @@ async function fetchExistingIdeas() {
   }
 }
 
-function generatePrompt(existingIdeas) {
-  let basePrompt = `Wygeneruj propozycję reformy prawa w Polsce, która jest innowacyjna i odważna, ale jednocześnie realistyczna do wdrożenia.`;
+const getPromptBase = () => `JESTEŚ GENERATOREM REFORM PRAWNYCH DLA POLSKI.
 
-  if (existingIdeas.length > 0) {
-    basePrompt += `\n\n!!!ABSOLUTNIE KRYTYCZNE - UNIKAJ DUPLIKATÓW!!!
-NASTĘPUJĄCE POMYSŁY ZOSTAŁY JUŻ WYGENEROWANE I WYSŁANE. NIE GENERUJ ICH PONOWNIE:
+TWOIM ZADANIEM JEST:
+1. Wybrać NAJPIERW kategorię z listy poniżej
+2. Następnie wygenerować reformę dla tej kategorii
+3. Zwrócić kompletny JSON z wszystkimi polami
 
-`;
-    existingIdeas.forEach((idea, index) => {
-      basePrompt += `${index + 1}. "${idea.title}" (kategoria: ${idea.category})\n`;
-      basePrompt += `   Streszczenie: ${idea.summary.substring(0, 100)}...\n\n`;
-    });
+=== KROK 1: WYBIERZ KATEGORIĘ ===
+WYBIERZ DOKŁADNIE JEDNĄ kategorię z tej listy (użyj DOKŁADNEJ nazwy):
 
-    basePrompt += `MUSISZ wybrać ZUPEŁNIE INNY temat i kategorię niż wyżej wymienione.
-Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie ODRZUCONA!
-
-`;
-  }
-
-  return basePrompt;
-}
-
-const getPromptBase =
-  () => `Wygeneruj propozycję reformy prawa w Polsce, która jest innowacyjna i odważna, ale jednocześnie realistyczna do wdrożenia.
-Reforma powinna odnosić się do rzeczywistych problemów Polski, być kontrowersyjna na tyle by wzbudzała dyskusję, ale nie na tyle by była kompletnie nierealna.
-Inspiruj się obecnymi trendami politycznymi i społecznymi, ale utrzymuj propozycje w granicach rozsądku.
-
-!!!ABSOLUTNIE KRYTYCZNE - KATEGORIA!!!
-MUSISZ wybrać DOKŁADNIE JEDNĄ kategorię z poniższej listy. Użyj DOKŁADNIE takiej samej nazwy jak podano:
-
-DOSTĘPNE KATEGORIE (wybierz JEDNĄ):
 ${categoriesList}
 
-Przykłady POPRAWNYCH nazw kategorii:
-- "Finanse publiczne"
-- "Imigracja"
-- "Ochrona zdrowia"
-- "Edukacja"
+PRZYKŁADY POPRAWNYCH KATEGORII:
+✅ "Finanse publiczne"
+✅ "Ochrona zdrowia"
+✅ "Edukacja"
+✅ "Imigracja"
 
-UWAGA: Jeśli nie podasz kategorii lub użyjesz niewłaściwej nazwy, twoja odpowiedź zostanie ODRZUCONA!
+❌ NIGDY NIE UŻYWAJ:
+- undefined
+- null
+- pustego stringa ""
+- kategorii spoza listy
 
-Wygeneruj w formacie JSON z polami:
-- title: chwytliwy, ale profesjonalny tytuł reformy - MAKSYMALNIE 100 znaków
-- summary: zwięzłe, merytoryczne podsumowanie - TUTAJ NIE MOŻESZ UŻYWAĆ MARKDOWNA - MAKSYMALNIE 300 znaków
-- content: szczegółowy opis reformy w formacie MARKDOWN - MAKSYMALNIE 4500 znaków. Użyj nagłówków (##, ###), list (-, *), pogrubienia (**tekst**). Podziel na sekcje: Uzasadnienie, Cele, Wdrożenie, Skutki społeczne, Skutki ekonomiczne. BĄDŹ ZWIĘZŁY!
-- category: DOKŁADNA nazwa kategorii z listy powyżej (OBOWIĄZKOWE!)
+=== KROK 2: WYGENERUJ REFORMĘ ===
+Reforma powinna:
+- Odnosić się do rzeczywistych problemów Polski
+- Być innowacyjna i odważna, ale realistyczna
+- Wzbudzać dyskusję, ale nie być absurdalna
+- Trzymać się limitów znaków!
 
-PRZYKŁAD STRUKTURY JSON:
+=== KROK 3: ZWRÓĆ JSON ===
+MUSISZ zwrócić JSON z WSZYSTKIMI 4 POLAMI:
+
 {
-  "title": "Tytuł reformy",
-  "summary": "Krótkie podsumowanie",
-  "content": "## Uzasadnienie\\n\\nTreść...\\n\\n## Cele\\n\\n- Cel 1\\n- Cel 2",
-  "category": "Finanse publiczne"
+  "category": "NAJPIERW WSTAW KATEGORIĘ Z LISTY",
+  "title": "Tytuł reformy (max 100 znaków)",
+  "summary": "Podsumowanie bez Markdown (max 300 znaków)",
+  "content": "## Uzasadnienie\\n\\nTreść...\\n\\n## Cele\\n\\n- Cel 1 (max 4500 znaków, format Markdown)"
 }
 
-!!!KRYTYCZNE - ZASADY JSON!!!
-- Generuj PRAWIDŁOWY, KOMPLETNY JSON - używaj \\n dla nowych linii w treści content
-- Wszystkie znaki specjalne w stringach muszą być POPRAWNIE escapowane (\\n, \\t, \\", \\\\)
-- Nie używaj ŻADNYCH znaków kontrolnych w treści
+WYMAGANIA TECHNICZNE:
+- Używaj \\n dla nowych linii w content
+- Escapuj znaki specjalne: \\", \\\\, \\t
 - JSON musi być parsewalny przez JSON.parse()
-- ZAKOŃCZ WSZYSTKIE STRINGI znakiem " i ZAMKNIJ obiekt JSON za pomocą }
-- Pole "category" MUSI istnieć i MUSI zawierać DOKŁADNĄ nazwę z listy kategorii!
+- Wszystkie 4 pola MUSZĄ istnieć
+- content: użyj Markdown (##, ###, -, *, **tekst**)
+- summary: PLAIN TEXT (bez Markdown!)
 
-!!!ABSOLUTNIE KRYTYCZNE - NIE PRZEKRACZAJ TYCH LIMITÓW!!!
-- title: MAKSYMALNIE 100 znaków
-- summary: MAKSYMALNIE 300 znaków
-- content: MAKSYMALNIE 4500 znaków - BĄDŹ ZWIĘZŁY ALE MERYTORYCZNY!
+LIMITY (NIE PRZEKRACZAJ!):
+- title: max 100 znaków
+- summary: max 300 znaków
+- content: max 4500 znaków
+- category: DOKŁADNA nazwa z listy
 
-Jeśli przekroczysz limity lub nie podasz poprawnej kategorii, request się nie powiedzie!
-Bądź innowacyjny i kontrowersyjny, ale zachowaj realizm i merytorykę. TRZYMAJ SIĘ LIMITÓW!
-Odpowiedz TYLKO w formacie JSON, bez żadnych dodatkowych komentarzy.`;
+KOLEJNOŚĆ DZIAŁANIA:
+1️⃣ Wybierz kategorię z listy
+2️⃣ Wymyśl reformę dla tej kategorii
+3️⃣ Wypełnij JSON zaczynając od pola "category"
+4️⃣ Sprawdź limity znaków
+5️⃣ Zwróć TYLKO JSON, bez komentarzy
+
+⚠️ JEŚLI NIE PODASZ POLA "category" LUB UŻYJESZ ZŁEJ NAZWY, ODPOWIEDŹ ZOSTANIE ODRZUCONA!
+
+Rozpocznij od wyboru kategorii, potem wygeneruj reformę. Zwróć TYLKO JSON.`;
 
 async function generateReform() {
   try {
@@ -288,18 +282,45 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
       throw parseError;
     }
 
+    // Walidacja podstawowych pól
+    if (!reform || typeof reform !== 'object') {
+      throw new Error(
+        'Model nie zwrócił poprawnego obiektu JSON - wymagane ponowne generowanie',
+      );
+    }
+
+    if (!reform.title || !reform.summary || !reform.content) {
+      throw new Error(
+        'Brak wymaganych pól (title/summary/content) - wymagane ponowne generowanie',
+      );
+    }
+
     console.log(
       `📏 Długości: title=${reform.title?.length}, summary=${reform.summary?.length}, content=${reform.content?.length}`,
     );
 
-    if (!reform.category || typeof reform.category !== 'string') {
+    // Sprawdzenie kategorii - kluczowe!
+    if (
+      !reform.category ||
+      typeof reform.category !== 'string' ||
+      reform.category.trim() === ''
+    ) {
+      console.error('❌ Model nie zwrócił kategorii!');
+      console.error('🔍 Otrzymany JSON:', JSON.stringify(reform, null, 2));
       throw new Error(
         `Brak lub niepoprawna kategoria: "${reform.category}" - wymagane ponowne generowanie`,
       );
     }
 
+    // Normalizacja kategorii - usuń białe znaki
+    reform.category = reform.category.trim();
+
     const category = CATEGORIES.find((c) => c.name === reform.category);
     if (!category) {
+      console.error('❌ Nieznana kategoria!');
+      console.error(`🔍 Otrzymana kategoria: "${reform.category}"`);
+      console.error('📋 Dostępne kategorie:');
+      CATEGORIES.forEach((c) => console.error(`   - "${c.name}"`));
       throw new Error(
         `Nieznana kategoria: "${reform.category}" - wymagane ponowne generowanie`,
       );
