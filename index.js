@@ -243,6 +243,9 @@ async function refreshAccessToken() {
 
 async function postReform(reform) {
   try {
+    // Pobierz świeży token przed każdym wysłaniem
+    await refreshAccessToken();
+
     const body = {
       title: reform.title,
       summary: reform.summary,
@@ -268,28 +271,9 @@ async function postReform(reform) {
 
     console.log('📤 Wysyłam reformę na projekt27.pl...');
 
-    try {
-      const response = await axios.post(API_ENDPOINT, body, { headers });
-      console.log('✅ Pomyślnie wysłano reformę! Status:', response.status);
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 401) {
-        console.warn('⚠️  Token wygasł (401), odnawiamy i ponawiamy...');
-        await refreshAccessToken();
-
-        const headersWithNewToken = {
-          Authorization: `Bearer ${PROJECT27_TOKEN}`,
-          'Content-Type': 'application/json',
-        };
-
-        const response = await axios.post(API_ENDPOINT, body, {
-          headers: headersWithNewToken,
-        });
-        console.log('✅ Pomyślnie wysłano reformę! Status:', response.status);
-        return response.data;
-      }
-      throw error;
-    }
+    const response = await axios.post(API_ENDPOINT, body, { headers });
+    console.log('✅ Pomyślnie wysłano reformę! Status:', response.status);
+    return response.data;
   } catch (error) {
     console.error(
       '❌ Błąd podczas wysyłania reformy:',
@@ -331,8 +315,6 @@ function scheduleNext() {
 
 console.log('🚀 Uruchamiam generator reform prawnych...');
 console.log(`⚙️  Interwał: ${MIN_INTERVAL}-${MAX_INTERVAL} minut\n`);
-
-await refreshAccessToken();
 
 runCycle().then(() => {
   scheduleNext();
