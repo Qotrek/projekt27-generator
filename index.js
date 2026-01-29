@@ -125,14 +125,33 @@ const PROMPT = `Wygeneruj propozycję reformy prawa w Polsce, która jest innowa
 Reforma powinna odnosić się do rzeczywistych problemów Polski, być kontrowersyjna na tyle by wzbudzała dyskusję, ale nie na tyle by była kompletnie nierealna.
 Inspiruj się obecnymi trendami politycznymi i społecznymi, ale utrzymuj propozycje w granicach rozsądku.
 
-DOSTĘPNE KATEGORIE:
+!!!ABSOLUTNIE KRYTYCZNE - KATEGORIA!!!
+MUSISZ wybrać DOKŁADNIE JEDNĄ kategorię z poniższej listy. Użyj DOKŁADNIE takiej samej nazwy jak podano:
+
+DOSTĘPNE KATEGORIE (wybierz JEDNĄ):
 ${categoriesList}
+
+Przykłady POPRAWNYCH nazw kategorii:
+- "Finanse publiczne"
+- "Imigracja"
+- "Ochrona zdrowia"
+- "Edukacja"
+
+UWAGA: Jeśli nie podasz kategorii lub użyjesz niewłaściwej nazwy, twoja odpowiedź zostanie ODRZUCONA!
 
 Wygeneruj w formacie JSON z polami:
 - title: chwytliwy, ale profesjonalny tytuł reformy - MAKSYMALNIE 100 znaków
 - summary: zwięzłe, merytoryczne podsumowanie - TUTAJ NIE MOŻESZ UŻYWAĆ MARKDOWNA - MAKSYMALNIE 300 znaków
 - content: szczegółowy opis reformy w formacie MARKDOWN - MAKSYMALNIE 4500 znaków. Użyj nagłówków (##, ###), list (-, *), pogrubienia (**tekst**). Podziel na sekcje: Uzasadnienie, Cele, Wdrożenie, Skutki społeczne, Skutki ekonomiczne. BĄDŹ ZWIĘZŁY!
-- category: nazwa kategorii z listy powyżej (DOKŁADNIE jak podano, np. "Finanse publiczne", "Imigracja")
+- category: DOKŁADNA nazwa kategorii z listy powyżej (OBOWIĄZKOWE!)
+
+PRZYKŁAD STRUKTURY JSON:
+{
+  "title": "Tytuł reformy",
+  "summary": "Krótkie podsumowanie",
+  "content": "## Uzasadnienie\\n\\nTreść...\\n\\n## Cele\\n\\n- Cel 1\\n- Cel 2",
+  "category": "Finanse publiczne"
+}
 
 !!!KRYTYCZNE - ZASADY JSON!!!
 - Generuj PRAWIDŁOWY, KOMPLETNY JSON - używaj \\n dla nowych linii w treści content
@@ -140,13 +159,14 @@ Wygeneruj w formacie JSON z polami:
 - Nie używaj ŻADNYCH znaków kontrolnych w treści
 - JSON musi być parsewalny przez JSON.parse()
 - ZAKOŃCZ WSZYSTKIE STRINGI znakiem " i ZAMKNIJ obiekt JSON za pomocą }
+- Pole "category" MUSI istnieć i MUSI zawierać DOKŁADNĄ nazwę z listy kategorii!
 
 !!!ABSOLUTNIE KRYTYCZNE - NIE PRZEKRACZAJ TYCH LIMITÓW!!!
 - title: MAKSYMALNIE 100 znaków
 - summary: MAKSYMALNIE 300 znaków
 - content: MAKSYMALNIE 4500 znaków - BĄDŹ ZWIĘZŁY ALE MERYTORYCZNY!
 
-Jeśli przekroczysz limity, request się nie powiedzie!
+Jeśli przekroczysz limity lub nie podasz poprawnej kategorii, request się nie powiedzie!
 Bądź innowacyjny i kontrowersyjny, ale zachowaj realizm i merytorykę. TRZYMAJ SIĘ LIMITÓW!
 Odpowiedz TYLKO w formacie JSON, bez żadnych dodatkowych komentarzy.`;
 
