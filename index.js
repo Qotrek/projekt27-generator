@@ -125,7 +125,6 @@ async function fetchExistingIdeas() {
   try {
     console.log('📥 Pobieranie listy wcześniej wygenerowanych pomysłów...');
 
-    // Pobierz świeży token przed każdym zapytaniem
     await refreshAccessToken();
 
     const headers = {
@@ -198,11 +197,17 @@ MUSISZ zwrócić JSON z WSZYSTKIMI 4 POLAMI:
 
 WYMAGANIA TECHNICZNE:
 - Używaj \\n dla nowych linii w content
+- W TREŚCI UŻYWAJ POJEDYNCZYCH CUDZYSŁOWÓW ('tekst') ZAMIAST PODWÓJNYCH ("tekst")!
+- Jeśli musisz użyć cudzysłowu w treści, użyj \\" (escaped quote)
 - Escapuj znaki specjalne: \\", \\\\, \\t
 - JSON musi być parsewalny przez JSON.parse()
 - Wszystkie 4 pola MUSZĄ istnieć
 - content: użyj Markdown (##, ###, -, *, **tekst**)
 - summary: PLAIN TEXT (bez Markdown!)
+
+PRZYKŁAD POPRAWNEGO ESCAPOWANIA:
+❌ ŹLE: "content": "Program 'Zdrowie+' to rewolucja"
+✅ DOBRZE: "content": "Program 'Zdrowie+' to rewolucja"
 
 LIMITY (NIE PRZEKRACZAJ!):
 - title: max 100 znaków
@@ -230,7 +235,6 @@ async function generateReform() {
 
     let finalPrompt = getPromptBase();
 
-    // Jeśli są wcześniejsze pomysły, dodaj je do prompta
     if (existingIdeas.length > 0) {
       finalPrompt = `${getPromptBase()}
 
@@ -267,6 +271,25 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
       jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
     }
 
+    try {
+      JSON.parse(jsonText);
+    } catch (firstError) {
+      console.warn(
+        '⚠️  Pierwszy parse nie powiódł się, próbuję naprawić cudzysłowy...',
+      );
+
+      const fixedJson = jsonText.replace(
+        /"(title|summary|content|category)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
+        (match, key, value) => {
+          const fixedValue = value.replace(/(?<!\\)"/g, "'");
+          return `"${key}": "${fixedValue}"`;
+        },
+      );
+
+      jsonText = fixedJson;
+      console.log('🔧 Naprawiono nieescapowane cudzysłowy');
+    }
+
     let reform;
     try {
       reform = JSON.parse(jsonText);
@@ -282,7 +305,6 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
       throw parseError;
     }
 
-    // Walidacja podstawowych pól
     if (!reform || typeof reform !== 'object') {
       throw new Error(
         'Model nie zwrócił poprawnego obiektu JSON - wymagane ponowne generowanie',
@@ -299,7 +321,6 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
       `📏 Długości: title=${reform.title?.length}, summary=${reform.summary?.length}, content=${reform.content?.length}`,
     );
 
-    // Sprawdzenie kategorii - kluczowe!
     if (
       !reform.category ||
       typeof reform.category !== 'string' ||
@@ -312,7 +333,6 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
       );
     }
 
-    // Normalizacja kategorii - usuń białe znaki
     reform.category = reform.category.trim();
 
     const category = CATEGORIES.find((c) => c.name === reform.category);
@@ -359,7 +379,6 @@ async function refreshAccessToken() {
 
 async function postReform(reform) {
   try {
-    // Pobierz świeży token przed każdym wysłaniem
     await refreshAccessToken();
 
     const body = {
