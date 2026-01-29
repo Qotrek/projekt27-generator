@@ -121,7 +121,64 @@ const categoriesList = CATEGORIES.map(
   (c) => `- ${c.name}: ${c.description}`,
 ).join('\n');
 
-const PROMPT = `Wygeneruj propozycję reformy prawa w Polsce, która jest innowacyjna i odważna, ale jednocześnie realistyczna do wdrożenia.
+async function fetchExistingIdeas() {
+  try {
+    console.log('📥 Pobieranie listy wcześniej wygenerowanych pomysłów...');
+
+    // Pobierz świeży token przed każdym zapytaniem
+    await refreshAccessToken();
+
+    const headers = {
+      Authorization: `Bearer ${PROJECT27_TOKEN}`,
+      'Content-Type': 'application/json',
+    };
+
+    const response = await axios.get(
+      'https://projekt27.pl/api/users/me/ideas?page=1&limit=50',
+      { headers },
+    );
+
+    const ideas = response.data.items || [];
+    console.log(`✅ Pobrano ${ideas.length} wcześniejszych pomysłów`);
+
+    return ideas.map((idea) => ({
+      title: idea.title,
+      summary: idea.summary,
+      category: idea.category?.name,
+    }));
+  } catch (error) {
+    console.error(
+      '⚠️  Błąd pobierania pomysłów (ciągnę dalej):',
+      error.response?.data || error.message,
+    );
+    return [];
+  }
+}
+
+function generatePrompt(existingIdeas) {
+  let basePrompt = `Wygeneruj propozycję reformy prawa w Polsce, która jest innowacyjna i odważna, ale jednocześnie realistyczna do wdrożenia.`;
+
+  if (existingIdeas.length > 0) {
+    basePrompt += `\n\n!!!ABSOLUTNIE KRYTYCZNE - UNIKAJ DUPLIKATÓW!!!
+NASTĘPUJĄCE POMYSŁY ZOSTAŁY JUŻ WYGENEROWANE I WYSŁANE. NIE GENERUJ ICH PONOWNIE:
+
+`;
+    existingIdeas.forEach((idea, index) => {
+      basePrompt += `${index + 1}. "${idea.title}" (kategoria: ${idea.category})\n`;
+      basePrompt += `   Streszczenie: ${idea.summary.substring(0, 100)}...\n\n`;
+    });
+
+    basePrompt += `MUSISZ wybrać ZUPEŁNIE INNY temat i kategorię niż wyżej wymienione.
+Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie ODRZUCONA!
+
+`;
+  }
+
+  return basePrompt;
+}
+
+const getPromptBase =
+  () => `Wygeneruj propozycję reformy prawa w Polsce, która jest innowacyjna i odważna, ale jednocześnie realistyczna do wdrożenia.
 Reforma powinna odnosić się do rzeczywistych problemów Polski, być kontrowersyjna na tyle by wzbudzała dyskusję, ale nie na tyle by była kompletnie nierealna.
 Inspiruj się obecnymi trendami politycznymi i społecznymi, ale utrzymuj propozycje w granicach rozsądku.
 
@@ -172,11 +229,34 @@ Odpowiedz TYLKO w formacie JSON, bez żadnych dodatkowych komentarzy.`;
 
 async function generateReform() {
   try {
+    console.log('🤖 Pobieranie wcześniejszych pomysłów...');
+    const existingIdeas = await fetchExistingIdeas();
+
     console.log('🤖 Generuję nową reformę prawną...');
+
+    let finalPrompt = getPromptBase();
+
+    // Jeśli są wcześniejsze pomysły, dodaj je do prompta
+    if (existingIdeas.length > 0) {
+      finalPrompt = `${getPromptBase()}
+
+!!!ABSOLUTNIE KRYTYCZNE - UNIKAJ DUPLIKATÓW!!!
+NASTĘPUJĄCE POMYSŁY ZOSTAŁY JUŻ WYGENEROWANE I WYSŁANE. NIE GENERUJ ICH PONOWNIE - WYBIERZ ZUPEŁNIE INNY TEMAT:
+
+${existingIdeas
+  .slice(0, 15)
+  .map(
+    (idea, idx) => `${idx + 1}. "${idea.title}" (kategoria: ${idea.category})`,
+  )
+  .join('\n')}
+
+MUSISZ wybrać ZUPEŁNIE NOWY temat, inny od wymienionych wyżej!
+Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie ODRZUCONA!`;
+    }
 
     const randomSeed = Math.random().toString(36).substring(7);
     const timestamp = new Date().toISOString();
-    const uniquePrompt = `${PROMPT}\n\n[Generacja ID: ${randomSeed} | Czas: ${timestamp}]`;
+    const uniquePrompt = `${finalPrompt}\n\n[Generacja ID: ${randomSeed} | Czas: ${timestamp}]`;
 
     const result = await model.generateContent(uniquePrompt);
     const response = result.response;
