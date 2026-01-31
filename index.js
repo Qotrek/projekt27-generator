@@ -110,9 +110,9 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.5-flash',
   generationConfig: {
-    temperature: 1.0,
+    temperature: 1.5,
     topP: 0.95,
-    topK: 40,
+    topK: 64,
     maxOutputTokens: 16384,
   },
 });
@@ -186,12 +186,13 @@ Reforma powinna:
 - Trzymać się limitów znaków!
 
 === KROK 3: ZWRÓĆ JSON ===
-MUSISZ zwrócić JSON z WSZYSTKIMI 4 POLAMI:
+MUSISZ zwrócić JSON z WSZYSTKIMI 5 POLAMI:
 
 {
   "category": "NAJPIERW WSTAW KATEGORIĘ Z LISTY",
   "title": "Tytuł reformy (max 100 znaków)",
-  "summary": "Podsumowanie bez Markdown (max 300 znaków)",
+  "goal": "Główny cel reformy - krótko i zwięźle (max 300 znaków)",
+  "summary": "Podsumowanie reformy bez Markdown (max 300 znaków)",
   "content": "## Uzasadnienie\\n\\nTreść...\\n\\n## Cele\\n\\n- Cel 1 (max 4500 znaków, format Markdown)"
 }
 
@@ -201,9 +202,9 @@ WYMAGANIA TECHNICZNE:
 - Jeśli musisz użyć cudzysłowu w treści, użyj \\" (escaped quote)
 - Escapuj znaki specjalne: \\", \\\\, \\t
 - JSON musi być parsewalny przez JSON.parse()
-- Wszystkie 4 pola MUSZĄ istnieć
+- Wszystkie 5 pól MUSZĄ istnieć (category, title, goal, summary, content)
 - content: użyj Markdown (##, ###, -, *, **tekst**)
-- summary: PLAIN TEXT (bez Markdown!)
+- goal i summary: PLAIN TEXT (bez Markdown!)
 
 PRZYKŁAD POPRAWNEGO ESCAPOWANIA:
 ❌ ŹLE: "content": "Program 'Zdrowie+' to rewolucja"
@@ -211,6 +212,7 @@ PRZYKŁAD POPRAWNEGO ESCAPOWANIA:
 
 LIMITY (NIE PRZEKRACZAJ!):
 - title: max 100 znaków
+- goal: max 300 znaków
 - summary: max 300 znaków
 - content: max 4500 znaków
 - category: DOKŁADNA nazwa z listy
@@ -254,7 +256,21 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
 
     const randomSeed = Math.random().toString(36).substring(7);
     const timestamp = new Date().toISOString();
-    const uniquePrompt = `${finalPrompt}\n\n[Generacja ID: ${randomSeed} | Czas: ${timestamp}]`;
+
+    const creativePrompts = [
+      'Pomyśl o rozwiązaniu inspirowanym najlepszymi praktykami z innych krajów',
+      'Wymyśl odważną, innowacyjną reformę, która zaskoczy ekspertów',
+      'Stwórz reformę łączącą elementy z różnych dziedzin w niestandardowy sposób',
+      'Zaproponuj kontrowersyjne, ale logiczne rozwiązanie problemu',
+      'Wymyśl reformę wykorzystującą nowoczesne technologie lub niestandardowe podejście',
+      'Stwórz reformę łamiącą utarte schematy myślenia o tym temacie',
+      'Zaproponuj radykalne uproszczenie obecnego systemu',
+      'Wymyśl reformę inspirowaną współczesnymi trendami społecznymi lub technologicznymi',
+    ];
+    const randomCreativePrompt =
+      creativePrompts[Math.floor(Math.random() * creativePrompts.length)];
+
+    const uniquePrompt = `${finalPrompt}\n\n🎯 DODATKOWA INSPIRACJA: ${randomCreativePrompt}\n\n[Generacja ID: ${randomSeed} | Czas: ${timestamp}]`;
 
     const result = await model.generateContent(uniquePrompt);
     const response = result.response;
@@ -279,7 +295,7 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
       );
 
       const fixedJson = jsonText.replace(
-        /"(title|summary|content|category)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
+        /"(title|goal|summary|content|category)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
         (match, key, value) => {
           const fixedValue = value.replace(/(?<!\\)"/g, "'");
           return `"${key}": "${fixedValue}"`;
@@ -311,14 +327,14 @@ Jeśli wygenerujesz podobny lub identyczny pomysł, twoja odpowiedź zostanie OD
       );
     }
 
-    if (!reform.title || !reform.summary || !reform.content) {
+    if (!reform.title || !reform.goal || !reform.summary || !reform.content) {
       throw new Error(
-        'Brak wymaganych pól (title/summary/content) - wymagane ponowne generowanie',
+        'Brak wymaganych pól (title/goal/summary/content) - wymagane ponowne generowanie',
       );
     }
 
     console.log(
-      `📏 Długości: title=${reform.title?.length}, summary=${reform.summary?.length}, content=${reform.content?.length}`,
+      `📏 Długości: title=${reform.title?.length}, goal=${reform.goal?.length}, summary=${reform.summary?.length}, content=${reform.content?.length}`,
     );
 
     if (
@@ -383,6 +399,7 @@ async function postReform(reform) {
 
     const body = {
       title: reform.title,
+      goal: reform.goal,
       summary: reform.summary,
       content: reform.content,
       category_id: reform.category_id,
