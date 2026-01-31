@@ -133,7 +133,7 @@ async function fetchExistingIdeas() {
     };
 
     const response = await axios.get(
-      'https://projekt27.pl/api/users/me/ideas?page=1&limit=50',
+      'https://projekt27.pl/api/users/me/ideas?limit=100',
       { headers },
     );
 
